@@ -26,8 +26,6 @@ test.afterEach(async ({ browser }) => {
 
 async function openDevice(browser, baseURL, path, viewport = { width: 1280, height: 720 }) {
   const context = await browser.newContext({ baseURL, viewport })
-  await context.route("https://fonts.googleapis.com/**", route => route.abort())
-  await context.route("https://fonts.gstatic.com/**", route => route.abort())
   const page = await context.newPage()
   await page.goto(path)
   await page.waitForLoadState("networkidle")

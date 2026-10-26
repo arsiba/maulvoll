@@ -19,6 +19,16 @@ RSpec.describe "Public security", type: :request do
     expect(document.at_css('meta[name="turbo-refresh-scroll"]')["content"]).to eq("preserve")
   end
 
+  it "keeps font and stylesheet requests on the application origin" do
+    get root_path
+    document = Nokogiri::HTML(response.body)
+    expect(document.css('link[rel="preconnect"]')).to be_empty
+    expect(document.css('link[rel="stylesheet"]').map { |link| link["href"] }).to all(start_with("/"))
+    expect(response.headers["Content-Security-Policy"]).to match(/(?:^|; )font-src 'self'(?:;|$)/)
+    expect(response.headers["Content-Security-Policy"]).to match(/(?:^|; )style-src 'self'(?: 'nonce-[^']+')?(?:;|$)/)
+    expect(response.body).not_to include("fonts.googleapis.com", "fonts.gstatic.com")
+  end
+
   it "has a neutral landing page and guards all management routes" do
     get root_path
     expect(response).to have_http_status(:ok)

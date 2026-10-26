@@ -1,0 +1,13 @@
+Kalam and Space Mono are bundled as unmodified WOFF2 files from Fontsource 5.3.0.
+Included styles: normal 400 and 700; Latin and Latin Extended subsets.
+
+Kalam: https://www.npmjs.com/package/@fontsource/kalam/v/5.3.0
+Upstream: https://github.com/itfoundry/kalam
+License and copyright notices: kalam/OFL.txt
+
+Space Mono: https://www.npmjs.com/package/@fontsource/space-mono/v/5.3.0
+Upstream: https://github.com/googlefonts/spacemono
+License and copyright notices: space-mono/OFL.txt
+
+The application serves these files through its own asset pipeline.
+No font CDN, external font stylesheet, or runtime font download is used.
