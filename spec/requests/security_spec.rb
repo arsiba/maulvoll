@@ -12,6 +12,13 @@ RSpec.describe "Public security", type: :request do
     post session_path, params: { email_address: user.email_address, password: "Verkostung-Sicher-2026!" }
   end
 
+  it "renders the Turbo refresh settings needed to preserve scroll and stream connections" do
+    get root_path
+    document = Nokogiri::HTML(response.body)
+    expect(document.at_css('meta[name="turbo-refresh-method"]')["content"]).to eq("morph")
+    expect(document.at_css('meta[name="turbo-refresh-scroll"]')["content"]).to eq("preserve")
+  end
+
   it "has a neutral landing page and guards all management routes" do
     get root_path
     expect(response).to have_http_status(:ok)
