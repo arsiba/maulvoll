@@ -6,6 +6,8 @@ Interaktive Blindverkostungen mit Host-Pult, TV-Dashboard und Smartphone-Control
 
 Die Abhängigkeiten stehen im [Gemfile](Gemfile). Ruby und Node richten sich nach `.ruby-version` und `.node-version`; Yarn 1.22 wird benötigt.
 
+Für Bash:
+
 ```bash
 bundle install
 yarn install --frozen-lockfile
@@ -17,6 +19,16 @@ bin/rails db:seed
 unset ADMIN_PASSWORD
 yarn build:css
 bin/dev
+```
+
+
+Für Fish ersetzt du die Admin-Anlage durch diese Befehle. Das Passwort wird verdeckt abgefragt und anschließend aus der Shell-Umgebung entfernt:
+
+```fish
+set -gx ADMIN_EMAIL "host@maulvoll.local"
+read --silent --export --prompt-str "Admin-Passwort mit mindestens 14 Zeichen: " ADMIN_PASSWORD
+bin/rails db:seed
+set -e ADMIN_PASSWORD
 ```
 
 `http://localhost:3000/session/new` öffnet den Host-Login. Ohne Admin-Variablen legt `db:prepare` nur die drei Produktvorlagen an. Mit `ADMIN_EMAIL` und `ADMIN_PASSWORD` erzeugt `db:seed` zusätzlich das Host-Konto und die spielfertige Maultaschen-Verkostung mit sechs Runden. Es gibt kein Standardpasswort. Seeds sind wiederholbar; bestehende Passwörter und Verkostungen werden dabei nicht zurückgesetzt. Die Beispielmarken lassen sich vor dem Start im Host-Pult bearbeiten.
