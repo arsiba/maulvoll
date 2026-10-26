@@ -87,5 +87,9 @@ jobs:
           RAILS_ENV: test
       - name: Run RSpec
         run: bundle exec rspec
+      - name: Install Chromium
+        run: yarn playwright install --with-deps chromium
+      - name: Run multiplayer browser tests
+        run: yarn test:browser
       - name: Check autoloading
         run: bin/rails zeitwerk:check
