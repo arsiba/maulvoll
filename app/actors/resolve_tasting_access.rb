@@ -13,8 +13,10 @@ class ResolveTastingAccess < ApplicationActor
     else TastingSession.find_by!(invite_token: token)
     end
     deny!("Nicht gefunden.", 404) unless tasting_session
-    return unless mode == :participant
+    return unless %i[join participant].include?(mode)
     self.participant = tasting_session.participants.find_by(session_token: participant_token) if participant_token.present?
+    deny!("Du wurdest aus dieser Verkostung entfernt.", 403) if participant&.blocked?
+    return if mode == :join
     deny!("Bitte über den Einladungslink beitreten.", 403) unless participant && !participant.blocked?
   end
 end

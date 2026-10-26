@@ -1,11 +1,18 @@
 <section class="paper narrow">
   <span class="stamp">Ein Platz ist für dich frei</span>
   <h1><%= @tasting.title %></h1>
-  <p>Keine Ahnung, was drin ist? Perfekt. Dein Geschmack hat das letzte Wort.</p>
-  <%= form_with url: join_path(@tasting.invite_token) do |form| %>
-    <%= invisible_captcha :nickname_confirmation, nil, nonce: true %>
-    <div class="mb-4"><%= form.label :name, "Wie heißt du am Tisch?", class: "form-label" %><%= form.text_field :name, maxlength: 25, autocomplete: "off", class: "form-control", placeholder: "Dein Name", aria: { describedby: "name-help" } %><p id="name-help" class="small mt-2">Maximal 25 Zeichen. Dein Name erscheint auf dem TV. Beim Wiederbeitritt kannst du das Feld leer lassen.</p></div>
-    <% if @tasting.entry_locked? %><p class="notice">Die Lobby ist geschlossen. Bereits angemeldete Gäste können wieder einsteigen.</p><% end %>
-    <%= form.submit "Bin dabei / Wieder einsteigen →", class: "btn btn-primary w-100" %>
+  <% if @participant %>
+    <h2>Willkommen zurück, <%= @participant.name %>!</h2>
+    <p>In diesem Browser bist du bereits als <strong><%= @participant.name %></strong> dabei. Weitere Tabs verwenden denselben Teilnehmer.</p>
+    <p>Für weitere Personen verwendet bitte jeweils ein eigenes Gerät oder ein separates Browserprofil.</p>
+    <%= link_to "Zurück zur Verkostung →", tasting_path(@tasting.invite_token), class: "btn btn-primary w-100" %>
+  <% else %>
+    <p>Keine Ahnung, was drin ist? Perfekt. Dein Geschmack hat das letzte Wort.</p>
+    <%= form_with url: join_path(@tasting.invite_token) do |form| %>
+      <%= invisible_captcha :nickname_confirmation, nil, nonce: true %>
+      <div class="mb-4"><%= form.label :name, "Wie heißt du am Tisch?", class: "form-label" %><%= form.text_field :name, required: true, maxlength: 25, autocomplete: "off", class: "form-control", placeholder: "Dein Name", aria: { describedby: "name-help" } %><p id="name-help" class="small mt-2">Maximal 25 Zeichen. Dein Name erscheint auf dem TV.</p></div>
+      <% if @tasting.entry_locked? %><p class="notice">Die Lobby ist geschlossen.</p><% end %>
+      <%= form.submit "Bin dabei / Wieder einsteigen →", class: "btn btn-primary w-100" %>
+    <% end %>
   <% end %>
 </section>

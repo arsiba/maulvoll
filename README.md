@@ -109,7 +109,7 @@ Die vollständigen [Routen](config/routes.rb) und [Controller](app/controllers) 
 
 [application.bootstrap.scss](app/assets/stylesheets/application.bootstrap.scss) enthält Bootstrap 5 und den rustikalen Klemmbrett-Look: kariertes Papier, Kalam, Space Mono, harte Schatten, Stempel und große antippbare Bewertungen. Tastaturfokus, Formularbeschriftungen, reduzierte Bewegung und Druckstyles sind berücksichtigt.
 
-[score_sheet_controller.js](app/javascript/controllers/score_sheet_controller.js) aktualisiert die Gesamtsumme. Der Template-Editor erlaubt Kriterien hinzuzufügen und zu entfernen sowie Awards, Skalen und Sprüche frei zu bearbeiten. `live_connection_controller.js` synchronisiert nach dem WebSocket-Verbindungsaufbau und bei Wiederverbindung. Dauerhafte Stream-Elemente verhindern Abonnementlücken bei Morph-Updates. Ein Bewertungsformular bleibt während derselben Runde erhalten, damit Live-Updates keine ungespeicherten Eingaben verwerfen.
+[score_sheet_controller.js](app/javascript/controllers/score_sheet_controller.js) aktualisiert die Gesamtsumme. Der Template-Editor erlaubt Kriterien hinzuzufügen und zu entfernen sowie Awards, Skalen und Sprüche frei zu bearbeiten. `live_connection_controller.js` synchronisiert nach dem WebSocket-Verbindungsaufbau und bei Wiederverbindung. Dauerhafte Stream-Elemente verhindern Abonnementlücken bei Morph-Updates. Treffen während einer Aktualisierung weitere Änderungen ein, wird anschließend erneut der aktuelle Stand geladen, damit gleichzeitige Beitritte und Bewertungen nicht verloren gehen. Ein Bewertungsformular bleibt während derselben Runde erhalten, damit Live-Updates keine ungespeicherten Eingaben verwerfen.
 
 ## 7. Views, Echtzeit und Export
 
@@ -131,5 +131,14 @@ yarn build:css
 ```
 
 [Actor-Tests](spec/actors), [Request-Tests](spec/requests) und [Cable-Tests](spec/channels) prüfen Zustandsfolge, dynamische Wertungen, Tie-Breaker, Weirdness, fehlende Stimmen, Cross-Session-Zugriffe, Blockierung, Honeypot, Rate-Limits, Escaping, Exporte und Stream-Berechtigungen. Die GitHub-Actions-Pipeline führt die Tests zusätzlich zu den bestehenden Sicherheits- und Stilprüfungen aus.
+
+Die Multiplayer-Browsertests laufen mit Playwright und Chromium:
+
+```bash
+yarn playwright install --with-deps chromium
+yarn test:browser
+```
+
+Sie starten einen eigenen Rails-Testserver auf Port 3101, erzeugen temporäre Test-Verkostungen und entfernen diese anschließend. Getestet werden überlappende Beitritte auf getrennten Browsern mit absichtlich verzögerten Updates an Host und TV sowie unabhängige Stimmen, erhaltene Bewertungsentwürfe und stabile Scrollpositionen. Die Tests laufen auch in CI. Die Ruby- und Browsertests sollten nacheinander ausgeführt werden, da sie dieselbe Testdatenbank verwenden. Für einen bereits installierten Chromium kann `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` gesetzt werden.
 
 Technische Referenzen: [Rails Security Guide](https://guides.rubyonrails.org/security.html), [ServiceActor](https://github.com/sunny/actor), [Rack Attack](https://github.com/rack/rack-attack), [Invisible Captcha](https://github.com/markets/invisible_captcha).

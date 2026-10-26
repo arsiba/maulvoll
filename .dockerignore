@@ -45,3 +45,6 @@
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+/test-results/
+/playwright-report/
