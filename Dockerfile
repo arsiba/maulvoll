@@ -1,5 +1,7 @@
 ARG RUBY_VERSION=4.0.7
-FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
+ARG NODE_VERSION=22.23.3
+FROM docker.io/library/node:${NODE_VERSION}-slim AS node
+FROM docker.io/library/ruby:${RUBY_VERSION}-slim AS base
 
 WORKDIR /rails
 
@@ -12,52 +14,42 @@ ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development:test" \
-    LD_PRELOAD="/usr/local/lib/libjemalloc.so"
+    LD_PRELOAD="/usr/local/lib/libjemalloc.so" \
+    RAILS_SERVE_STATIC_FILES="true"
 
 FROM base AS build
 
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libvips libyaml-dev node-gyp pkg-config python-is-python3 && \
+    apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-ARG NODE_VERSION=22.23.3
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 ARG YARN_VERSION=1.22.22
-ENV PATH=/usr/local/node/bin:$PATH
-RUN curl -sL https://github.com/nodenv/node-build/archive/master.tar.gz | tar xz -C /tmp/ && \
-    /tmp/node-build-master/bin/node-build "${NODE_VERSION}" /usr/local/node && \
-    npm install -g yarn@$YARN_VERSION && \
-    rm -rf /tmp/node-build-master
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    npm install --global yarn@${YARN_VERSION}
 
-COPY vendor/* ./vendor/
 COPY Gemfile Gemfile.lock ./
-
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile -j 1 --gemfile
 
 COPY package.json yarn.lock ./
-RUN yarn install --immutable
+RUN yarn install --frozen-lockfile --non-interactive
 
 COPY . .
-
 RUN bundle exec bootsnap precompile -j 1 app/ lib/
-
-RUN SECRET_KEY_BASE_DUMMY=1 APP_HOST=localhost CABLE_ORIGINS=https://localhost RATE_LIMIT_REDIS_URL=redis://127.0.0.1:6379/1 ./bin/rails assets:precompile
-
-
+RUN SKIP_YARN_INSTALL=1 SECRET_KEY_BASE_DUMMY=1 APP_HOST=localhost CABLE_ORIGINS=https://localhost RATE_LIMIT_REDIS_URL=redis://127.0.0.1:6379/1 ./bin/rails assets:precompile
 RUN rm -rf node_modules
-
 
 FROM base
 
 RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
-USER 1000:1000
-
 COPY --chown=rails:rails --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --chown=rails:rails --from=build /rails /rails
+USER 1000:1000
 
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
-
-EXPOSE 80
-CMD ["./bin/thrust", "./bin/rails", "server"]
+EXPOSE 3000
+CMD ["./bin/rails", "server"]
