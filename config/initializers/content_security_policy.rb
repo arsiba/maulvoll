@@ -2,8 +2,8 @@ Rails.application.configure do
   config.content_security_policy do |policy|
     policy.default_src :self
     policy.script_src :self
-    policy.style_src :self, "https://fonts.googleapis.com"
-    policy.font_src :self, "https://fonts.gstatic.com"
+    policy.style_src :self
+    policy.font_src :self
     policy.img_src :self, :data
     policy.connect_src :self, *ENV.fetch("CABLE_ORIGINS", "").split(",").map { |origin| origin.sub(/\Ahttp/, "ws") }
     policy.object_src :none
