@@ -65,3 +65,27 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - name: Build styles
+        run: corepack enable && yarn install --frozen-lockfile && yarn build:css
+      - name: Prepare database
+        run: bin/rails db:prepare
+        env:
+          RAILS_ENV: test
+      - name: Run RSpec
+        run: bundle exec rspec
+      - name: Check autoloading
+        run: bin/rails zeitwerk:check

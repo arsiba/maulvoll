@@ -1,0 +1,33 @@
+<%= turbo_stream_from [@tasting, :public], id: "stream-#{@tasting.invite_token}-public", data: { turbo_permanent: true, controller: "live-connection" } %>
+<div class="controller-sheet">
+  <div class="mb-4"><span class="stamp"><%= @participant.name %> ist am Tisch</span><h1 class="mt-3"><%= @tasting.title %></h1></div>
+  <% if @tasting.voting? %>
+    <section class="paper">
+      <span class="eyebrow">Jetzt bist du dran</span>
+      <h2><%= @tasting.product_singular %> Nr. <%= @view[:round].number %></h2>
+      <p><%= @view[:round].context_info %></p>
+      <div class="mb-4"><% @view[:round].tags.each do |tag| %><span class="stamp"><%= tag %></span><% end %></div>
+      <% if @view[:personal_rating] %><p class="notice">Deine Stimme ist gespeichert. Du kannst sie bis zum Rundenende ändern.</p><% end %>
+      <%= form_with url: ratings_path(@tasting.invite_token), id: "score-sheet-#{@view[:round].number}", data: { turbo_permanent: true, controller: "score-sheet", action: "change->score-sheet#update" } do |form| %>
+        <%= hidden_field_tag :round_number, @view[:round].number %>
+        <% @tasting.criteria_schema.each do |criterion| %>
+          <fieldset class="criterion"><legend><%= criterion.fetch("label") %></legend><div class="score-options">
+            <% (1..@tasting.max_score_per_criterion).each do |value| %>
+              <%= radio_button_tag "scores[#{criterion.fetch('key')}]", value, @view[:personal_rating]&.scores&.[](criterion.fetch("key")) == value, required: true, id: "score_#{criterion.fetch('key')}_#{value}", class: "score-radio", data: { score_sheet_target: "score" } %>
+              <%= label_tag "score_#{criterion.fetch('key')}_#{value}", value, class: "score-button" %>
+            <% end %>
+          </div></fieldset>
+        <% end %>
+        <div class="mb-4"><%= label_tag :notes, "Sonst noch was?", class: "form-label" %><%= text_area_tag :notes, @view[:personal_rating]&.notes, maxlength: 280, rows: 3, class: "form-control", placeholder: "Ehrliche Worte. Maximal 280 Zeichen." %></div>
+        <p class="total" aria-live="polite">Gesamt: <span data-score-sheet-target="total">0</span> / <%= @tasting.max_total %></p>
+        <%= form.submit "Zettel abgeben →", class: "btn btn-primary w-100" %>
+      <% end %>
+    </section>
+  <% elsif @tasting.final_reveal? %>
+    <%= render "shared/final", view: @view %>
+    <section class="paper mt-4"><h2>Dein Geschmack im Vergleich</h2><%= render "tasting_sessions/comparison", view: @view %><%= link_to "Deinen Bewertungsbogen öffnen →", export_tasting_path(@tasting.invite_token), class: "btn btn-primary mt-3" %></section>
+  <% else %>
+    <%= render "shared/state", view: @view %>
+    <p class="notice mt-4" role="status">Dein Handy wechselt automatisch mit. Lass es dir schmecken.</p>
+  <% end %>
+</div>

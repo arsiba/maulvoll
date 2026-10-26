@@ -1,0 +1,10 @@
+<section class="paper narrow">
+  <span class="stamp">Nur für Gastgeber</span>
+  <h1>Das Host-Pult</h1>
+  <%= form_with url: session_path do |form| %>
+    <div class="mb-3"><%= form.label :email_address, "E-Mail", class: "form-label" %><%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", class: "form-control" %></div>
+    <div class="mb-4"><%= form.label :password, "Passwort", class: "form-label" %><%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72, class: "form-control" %></div>
+    <%= form.submit "Aufschließen →", class: "btn btn-primary w-100" %>
+  <% end %>
+  <p class="small mt-4">Host-Konten werden ausschließlich durch die Betreiber angelegt.</p>
+</section>

@@ -1,0 +1,6 @@
+<div class="row g-3">
+  <div class="col-sm-3"><%= form.label :number, "Nummer", class: "form-label", for: "round_#{round&.number || 'new'}_number" %><%= form.number_field :number, value: round&.number, min: 1, max: 100, required: true, class: "form-control", id: "round_#{round&.number || 'new'}_number" %></div>
+  <div class="col-sm-9"><%= form.label :secret_identity, "Geheimer Name / Marke", class: "form-label", for: "round_#{round&.number || 'new'}_identity" %><%= form.text_field :secret_identity, value: round&.secret_identity, required: true, maxlength: 120, class: "form-control", id: "round_#{round&.number || 'new'}_identity" %></div>
+  <div class="col-12"><%= form.label :context_info, "Öffentliche Info", class: "form-label", for: "round_#{round&.number || 'new'}_context" %><%= form.text_field :context_info, value: round&.context_info, maxlength: 160, class: "form-control", id: "round_#{round&.number || 'new'}_context" %></div>
+  <div class="col-12"><%= label_tag "round_#{round&.number || 'new'}_tags", "Tags (pro Feld ein Tag, maximal 8)", class: "form-label" %><div class="row g-2"><% 8.times do |i| %><div class="col-6"><%= text_field_tag "round[tags][]", round&.tags&.[](i), maxlength: 30, class: "form-control", id: "round_#{round&.number || 'new'}_tags_#{i}", aria: { label: "Tag #{i + 1}" } %></div><% end %></div></div>
+</div>
