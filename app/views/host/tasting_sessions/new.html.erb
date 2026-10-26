@@ -1,0 +1,34 @@
+<h1>Was kommt auf den Tisch?</h1>
+<section class="paper" data-controller="template-editor" data-template-editor-default-value="<%= @dashboard.default_configuration.to_json %>" data-template-editor-templates-value="<%= @dashboard.templates.to_json(only: [:id, :name, :product_singular, :product_plural, :max_score_per_criterion, :criteria_schema, :award_titles, :vibe_messages]) %>">
+  <%= form_with scope: :tasting_session, url: host_tasting_sessions_path, data: { action: "input->template-editor#serialize submit->template-editor#serialize" } do |form| %>
+    <div class="mb-3"><%= label_tag :template_id, "Vorlage", class: "form-label" %><%= select_tag :template_id, options_from_collection_for_select(@dashboard.templates, :id, :name), include_blank: "Eigene Konfiguration / Maultaschen-Grundlage", class: "form-select", data: { template_editor_target: "preset", action: "change->template-editor#select" } %></div>
+    <div class="row g-3">
+      <div class="col-md-8"><%= form.label :title, "Titel", class: "form-label" %><%= form.text_field :title, required: true, maxlength: 120, class: "form-control" %></div>
+      <div class="col-md-4"><%= form.label :date, "Datum", class: "form-label" %><%= form.date_field :date, value: Date.current, required: true, class: "form-control" %></div>
+      <div class="col-md-4"><%= form.label :product_singular, "Produkt (Einzahl)", class: "form-label" %><%= form.text_field :product_singular, maxlength: 60, required: true, class: "form-control", data: { template_editor_target: "singular" } %></div>
+      <div class="col-md-4"><%= form.label :product_plural, "Produkt (Mehrzahl)", class: "form-label" %><%= form.text_field :product_plural, maxlength: 60, required: true, class: "form-control", data: { template_editor_target: "plural" } %></div>
+      <div class="col-md-4"><%= form.label :max_score_per_criterion, "Skala bis", class: "form-label" %><%= form.number_field :max_score_per_criterion, min: 1, max: 10, required: true, class: "form-control", data: { template_editor_target: "maximum" } %></div>
+    </div>
+    <%= form.hidden_field :criteria_schema, data: { template_editor_target: "criteria" } %>
+    <%= form.hidden_field :award_titles, data: { template_editor_target: "awards" } %>
+    <%= form.hidden_field :vibe_messages, data: { template_editor_target: "vibes" } %>
+    <h2 class="mt-4">Was wird bewertet?</h2>
+    <p class="small">Jedes Kriterium braucht einen Namen und ein kurzes, eindeutiges Kürzel aus Kleinbuchstaben, Zahlen und Unterstrichen.</p>
+    <div data-template-editor-target="rows"></div>
+    <template data-template-editor-target="rowTemplate"><div class="row g-2 mb-3" data-criterion-row>
+      <div class="col-md-5"><label class="d-block">Name<input class="form-control" data-criterion-label maxlength="50" required></label></div>
+      <div class="col-md-5"><label class="d-block">Kürzel<input class="form-control" data-criterion-key pattern="[a-z][a-z0-9_]{0,29}" maxlength="30" required></label></div>
+      <div class="col-md-2 d-flex align-items-end"><button type="button" class="btn btn-outline-danger w-100" data-action="template-editor#remove">Weg</button></div>
+    </div></template>
+    <button type="button" class="btn btn-outline-dark" data-action="template-editor#add">+ Kriterium</button>
+    <h2 class="mt-5">Eure Auszeichnungen</h2>
+    <% { best: "Gewinner", worst: "Flop", weirdest: "Spalter" }.each do |key, label| %>
+      <div class="mb-3"><%= label_tag "award_#{key}", label, class: "form-label" %><%= text_field_tag nil, nil, id: "award_#{key}", maxlength: 120, required: true, class: "form-control", data: { template_editor_target: "award", key: key } %></div>
+    <% end %>
+    <h2 class="mt-5">Was sagt das Bauchgefühl?</h2>
+    <% { low: "Unter 40 %", medium: "40 bis unter 60 %", high: "60 bis 80 %", excellent: "Über 80 %" }.each do |key, label| %>
+      <div class="mb-3"><%= label_tag "vibe_#{key}", label, class: "form-label" %><%= text_field_tag nil, nil, id: "vibe_#{key}", maxlength: 120, required: true, class: "form-control", data: { template_editor_target: "vibe", key: key } %></div>
+    <% end %>
+    <%= form.submit "Verkostung anlegen →", class: "btn btn-primary mt-4" %>
+  <% end %>
+</section>

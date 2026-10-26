@@ -1,0 +1,32 @@
+<% tasting = view[:tasting] %>
+<% if tasting.lobby? %>
+  <section class="paper text-center">
+    <span class="stamp">Tisch frei!</span>
+    <h2 class="display-title">Wer hat Geschmack?</h2>
+    <p class="lead">Handy raus. QR-Code scannen. Namen auf den Zettel.</p>
+    <% unless tasting.entry_locked? %><div class="qr-large"><%= qr_code(join_url(tasting.invite_token)) %></div><% else %><p>Die Lobby ist geschlossen.</p><% end %>
+    <p class="counter"><%= view[:count] %> <span>schon am Tisch</span></p>
+    <div class="participant-badges"><% view[:participants].each do |participant| %><span class="stamp"><%= participant.name %></span><% end %></div>
+  </section>
+<% elsif tasting.voting? %>
+  <section class="paper text-center">
+    <span class="stamp">Jetzt wird probiert</span>
+    <h2 class="display-title"><%= tasting.product_singular %><br><span class="giant-number">Nr. <%= view[:round].number %></span></h2>
+    <p class="lead"><%= view[:round].context_info %></p>
+    <div class="mb-4"><% view[:round].tags.each do |tag| %><span class="stamp"><%= tag %></span><% end %></div>
+    <p class="lead" aria-live="polite"><%= view[:voted] %> von <%= view[:count] %> haben abgestimmt</p>
+    <progress value="<%= view[:voted] %>" max="<%= [view[:count], 1].max %>" aria-label="Abgegebene Stimmen"></progress>
+    <p class="mt-4">Die Marke? Bleibt vorerst unser Geheimnis. ???</p>
+  </section>
+<% elsif tasting.round_vibe? %>
+  <section class="paper text-center">
+    <span class="stamp">Das Bauchgefühl · Nr. <%= view[:round].number %></span>
+    <h2 class="display-title"><%= view[:vibe][:vibe_title] %></h2>
+    <p class="counter"><%= score(view[:vibe][:average_total]) %><span> / <%= tasting.max_total %> Punkte im Schnitt</span></p>
+    <% if view[:vibe][:best] %><div class="steps"><span>Stark: <%= view[:vibe][:best].first %> (<%= score(view[:vibe][:best].last) %>)</span><span>Luft nach oben: <%= view[:vibe][:worst].first %> (<%= score(view[:vibe][:worst].last) %>)</span></div><% end %>
+    <div class="quotes mt-4"><% view[:vibe][:quotes].each do |quote| %><blockquote>„<%= quote %>“</blockquote><% end %></div>
+    <p class="mt-4">Name / Marke: ??? · Aufgedeckt wird ganz zum Schluss.</p>
+  </section>
+<% elsif tasting.final_reveal? %>
+  <%= render "shared/final", view: view %>
+<% end %>

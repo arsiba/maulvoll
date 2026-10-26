@@ -1,0 +1,7 @@
+<article class="paper print-sheet" data-controller="print">
+  <div class="no-print d-flex flex-wrap gap-3 mb-4"><button type="button" class="btn btn-primary" data-action="print#print">Drucken / Als PDF speichern</button><%= link_to "CSV herunterladen", export_tasting_path(@tasting.invite_token, format: :csv), class: "btn btn-outline-dark", data: { turbo: false } %></div>
+  <h1><%= @tasting.title %></h1>
+  <p>Name: <strong><%= @participant.name %></strong> · Datum: <%= @tasting.date.strftime("%d.%m.%Y") %></p>
+  <div class="print-awards"><% @view[:awards].each do |key, entry| %><p><strong><%= @tasting.award_titles.fetch(key.to_s) %>:</strong> <%= entry ? "Nr. #{entry[:round].number} · #{entry[:round].secret_identity}" : "Keine Wertung" %></p><% end %></div>
+  <%= render "comparison", view: @view %>
+</article>

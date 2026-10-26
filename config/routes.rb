@@ -1,14 +1,22 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
-
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
-  get "up" => "rails/health#show", as: :rails_health_check
-
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
-
-  # Defines the root path route ("/")
-  # root "posts#index"
+  root "landing#show"
+  get "up", to: "rails/health#show", as: :rails_health_check
+  resource :session, only: %i[new create destroy]
+  namespace :host do
+    resources :tasting_sessions, param: :invite_token, only: %i[index new create show] do
+      member do
+        post :advance
+        patch :lock
+      end
+      resources :rounds, param: :number, only: %i[create update destroy], controller: "rounds"
+      resources :participants, param: :participant_token, only: :destroy
+    end
+  end
+  get "tv/:tv_token", to: "tv#show", as: :tv
+  get "join/:invite_token", to: "participations#new", as: :join
+  post "join/:invite_token", to: "participations#create"
+  get "tasting/:invite_token", to: "tasting_sessions#show", as: :tasting
+  post "tasting/:invite_token/ratings", to: "ratings#create", as: :ratings
+  get "tasting/:invite_token/export", to: "tasting_sessions#export", as: :export_tasting
+  mount ActionCable.server => "/cable"
 end

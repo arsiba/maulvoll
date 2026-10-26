@@ -1,0 +1,8 @@
+<%= turbo_stream_from [@tasting, :public], id: "stream-#{@tasting.invite_token}-public", data: { turbo_permanent: true, controller: "live-connection" } %>
+<div class="tv-screen">
+  <div class="d-flex justify-content-between align-items-start gap-4 mb-4">
+    <div><span class="eyebrow">Blindverkostung live</span><h1><%= @tasting.title %></h1></div>
+    <% unless @tasting.entry_locked? || @tasting.final_reveal? %><aside class="qr-corner no-print"><%= qr_code(join_url(@tasting.invite_token)) %><span>Scannen. Mitmachen.</span></aside><% end %>
+  </div>
+  <%= render "shared/state", view: @view %>
+</div>

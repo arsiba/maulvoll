@@ -1,0 +1,14 @@
+<% tasting = view[:tasting] %>
+<section class="paper">
+  <span class="stamp">Die Masken fallen</span>
+  <h2 class="display-title">Und auf dem Teller war …</h2>
+  <div class="row g-4 my-2">
+    <% { best: "🏆", worst: "🤢", weirdest: "🤨" }.each do |key, icon| %>
+      <% entry = view[:awards][key] %>
+      <div class="col-md-4"><article class="award"><span class="award-icon"><%= icon %></span><h3><%= tasting.award_titles.fetch(key.to_s) %></h3><% if entry %><p>Nr. <%= entry[:round].number %></p><strong><%= entry[:round].secret_identity %></strong><% else %><p>Keine Wertung vorhanden</p><% end %></article></div>
+    <% end %>
+  </div>
+  <div class="table-responsive mt-5"><table class="table"><caption>Gruppenranking · Nur Runden mit Stimmen erhalten einen Rang.</caption><thead><tr><th scope="col">Platz</th><th scope="col">Kandidat</th><th scope="col">Name / Marke</th><th scope="col">Ø / <%= tasting.max_total %></th><th scope="col">Stimmen</th></tr></thead><tbody>
+    <% view[:ranking].each_with_index do |entry, index| %><tr><th scope="row"><%= entry[:count].positive? ? index + 1 : "–" %></th><td>Nr. <%= entry[:round].number %></td><td><%= entry[:round].secret_identity %></td><td><%= score(entry[:average_total]) %></td><td><%= entry[:count] %></td></tr><% end %>
+  </tbody></table></div>
+</section>
