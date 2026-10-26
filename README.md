@@ -141,4 +141,70 @@ yarn test:browser
 
 Sie starten einen eigenen Rails-Testserver auf Port 3101, erzeugen temporäre Test-Verkostungen und entfernen diese anschließend. Getestet werden überlappende Beitritte auf getrennten Browsern mit absichtlich verzögerten Updates an Host und TV sowie unabhängige Stimmen, erhaltene Bewertungsentwürfe und stabile Scrollpositionen. Die Tests laufen auch in CI. Die Ruby- und Browsertests sollten nacheinander ausgeführt werden, da sie dieselbe Testdatenbank verwenden. Für einen bereits installierten Chromium kann `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` gesetzt werden.
 
+## 9. Produktionsbetrieb mit Docker Compose und GHCR
+
+[compose.yml](compose.yml) enthält die Anwendung und den benötigten Redis-Dienst. Er verwendet standardmäßig `ghcr.io/arsiba/maulvoll:latest` und veröffentlicht HTTP auf `127.0.0.1:3000` für deinen vorhandenen Reverse Proxy. Es werden kein Proxy und keine Zertifikate eingerichtet. Redis ist intern bereits vollständig angebunden und veröffentlicht keinen Host-Port. Hintergrundjobs laufen über Solid Queue im selben Container. Alle SQLite-Datenbanken und Uploads liegen im persistenten `storage`-Volume.
+
+### Einrichtung
+
+```bash
+cp .env.example .env
+chmod 600 .env
+openssl rand -hex 64
+```
+
+Trage in `.env` folgende Anwendungswerte ein:
+
+| Variable | Wert |
+| --- | --- |
+| `APP_HOST` | Der bereits konfigurierte öffentliche Hostname ohne Protokoll oder Pfad; wird für die Rails-Host-Allowlist benötigt |
+| `CABLE_ORIGINS` | Erlaubte Browser-Origins, falls abweichend von `https://APP_HOST` |
+| `SECRET_KEY_BASE` | Der generierte Schlüssel; über Updates hinweg beibehalten |
+| `MAULVOLL_IMAGE` | Standard: `ghcr.io/arsiba/maulvoll:latest`; alternativ ein veröffentlichter Versions-Tag oder Digest |
+| `APP_PORT` | Lokaler HTTP-Port, standardmäßig `3000` |
+
+`BIND_ADDRESS` kann bei Bedarf ebenfalls gesetzt werden; standardmäßig bindet der veröffentlichte Port nur an Loopback. `ASSUME_SSL` ist standardmäßig `true`, passend zum Betrieb hinter deinem vertrauenswürdigen TLS-terminierenden Proxy. Die Proxy-, Netzwerk-, Domain- und TLS-Konfiguration bleibt vollständig bei deinem bestehenden Server-Setup.
+
+Das Image steht nach dem ersten erfolgreichen Release-Workflow zur Verfügung. Stelle das GHCR-Paket auf öffentlich, wenn es ohne Anmeldung abrufbar sein soll. Für private Pakete benötigst du auf dem Server `docker login ghcr.io` mit einem Token mit `read:packages`. Die CI selbst verwendet den automatisch bereitgestellten `GITHUB_TOKEN`.
+
+```bash
+docker compose pull
+docker compose up -d --wait
+docker compose ps
+```
+
+Der Anwendungscontainer läuft als UID 1000 mit schreibgeschütztem Root-Dateisystem, Healthcheck, Ressourcenlimits und rotierenden Logs. Redis verwendet ein eigenes persistentes Volume und muss vor dem Start der Anwendung gesund sein. Datenbanken werden beim Start automatisch vorbereitet beziehungsweise migriert. Anwendungs-Secrets werden ausschließlich zur Laufzeit übergeben.
+
+Den ersten Host kannst du interaktiv mit verdeckter Passwortabfrage anlegen. Der Befehl funktioniert auch aus Fish:
+
+```bash
+docker compose exec web bin/rails runner 'require "io/console"; print "E-Mail: "; email = STDIN.gets.strip; print "Passwort mit mindestens 14 Zeichen: "; password = STDIN.noecho(&:gets).strip; puts; SeedTastings.call(email: email, password: password)'
+```
+
+### Updates und Sicherungen
+
+Sichere vor Updates die Daten bei gestopptem Anwendungscontainer, damit keine Datenbankzugriffe während der Sicherung oder Migration stattfinden:
+
+```bash
+docker compose stop web
+docker compose run --rm --no-deps -T web tar -C /rails/storage -czf - . > maulvoll-storage.tar.gz
+docker compose pull
+docker compose up -d --wait
+```
+
+Sichere `.env` separat. `docker compose down` behält die Volumes, `docker compose down -v` löscht sie. Laufende Container aktualisieren sich nicht automatisch; `pull_policy: always` lädt die konfigurierte Image-Version beim nächsten Start. Der Rückwechsel zu älteren Images benötigt ein kompatibles Datenbankschema beziehungsweise ein passendes Backup.
+
+### Release-Workflow
+
+[release.yml](.github/workflows/release.yml) startet bei einem gepushten `v*`-Tag und bei Veröffentlichung eines GitHub-Releases. Verwende semantische Versionen wie `v1.2.3`. Zuerst läuft die bestehende CI mit Ruby-, Sicherheits- und Multiplayer-Browsertests. Erst danach baut Buildx das Image für `linux/amd64` und `linux/arm64` und veröffentlicht es in GHCR. Die Docker-Actions sind auf Commit-SHAs fixiert; Build-Provenance und SBOM werden mit erzeugt. Anwendungs-Secrets werden nicht an den Build übergeben.
+
+```bash
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+Ein stabiler Tag `v1.2.3` veröffentlicht die Tags `v1.2.3`, `1.2.3`, `1.2` und `latest`. Vorabversionen wie `v1.3.0-rc.1` und als Prerelease markierte GitHub-Releases verändern `latest` nicht. Wird nach einem Tag-Push auch ein GitHub-Release veröffentlicht, kann derselbe Tag erneut gebaut werden; Läufe desselben Tags sind serialisiert. `latest` bezeichnet den zuletzt erfolgreich veröffentlichten stabilen Build, nicht automatisch die numerisch höchste Version. Das Deployment auf deinem Server bleibt ein separater Compose-Aufruf.
+
+Referenzen: [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry), [Docker Compose Services](https://docs.docker.com/reference/compose-file/services/).
+
 Technische Referenzen: [Rails Security Guide](https://guides.rubyonrails.org/security.html), [ServiceActor](https://github.com/sunny/actor), [Rack Attack](https://github.com/rack/rack-attack), [Invisible Captcha](https://github.com/markets/invisible_captcha).

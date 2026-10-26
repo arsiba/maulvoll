@@ -1,0 +1,95 @@
+name: maulvoll
+
+services:
+  web:
+    image: ${MAULVOLL_IMAGE:-ghcr.io/arsiba/maulvoll:latest}
+    pull_policy: always
+    restart: unless-stopped
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      RAILS_ENV: production
+      BUNDLE_USER_HOME: /rails/tmp/bundle
+      APP_HOST: ${APP_HOST:?Set APP_HOST in .env}
+      CABLE_ORIGINS: ${CABLE_ORIGINS:-https://${APP_HOST}}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Set a persistent SECRET_KEY_BASE in .env}
+      RATE_LIMIT_REDIS_URL: redis://redis:6379/0
+      ASSUME_SSL: ${ASSUME_SSL:-true}
+      SOLID_QUEUE_IN_PUMA: "1"
+      RAILS_LOG_LEVEL: warn
+      RAILS_SERVE_STATIC_FILES: "true"
+      RAILS_MAX_THREADS: "5"
+      WEB_CONCURRENCY: "2"
+      JOB_CONCURRENCY: "1"
+      PORT: "3000"
+    command: ["./bin/rails", "server"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    volumes:
+      - storage:/rails/storage
+    tmpfs:
+      - /tmp:mode=1777,size=128m
+      - /rails/tmp:uid=1000,gid=1000,mode=1777,size=128m
+    cpus: 2.0
+    mem_limit: 1g
+    networks:
+      - default
+      - backend
+    stop_grace_period: 60s
+    healthcheck:
+      test: ["CMD-SHELL", 'curl --fail --silent --show-error --max-time 5 -H "Host: $$APP_HOST" -H "X-Forwarded-Proto: https" http://127.0.0.1:3000/up > /dev/null']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+      start_interval: 3s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    user: redis
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--save", "", "--maxmemory", "128mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis:/data
+    tmpfs:
+      - /tmp:mode=1777,size=16m
+    cpus: 0.5
+    mem_limit: 384m
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+networks:
+  backend:
+    internal: true
+
+volumes:
+  storage:
+  redis:

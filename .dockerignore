@@ -48,3 +48,8 @@
 
 /test-results/
 /playwright-report/
+
+/compose*.yml
+/spec/
+/playwright.config.mjs
+/.idea
