@@ -16,7 +16,7 @@ RSpec.describe "Tasting actors" do
   end
 
   it "creates an independent preset copy and tokens with at least 256 bits of entropy" do
-    template = TastingTemplate.create!(TastingPresets.call.presets.first)
+    template = TastingTemplate.create!(TastingPresets.call.presets.first.merge(name: "Vorlage für unabhängige Verkostungen"))
     result = CreateTastingFromTemplate.call(user: host, template_id: template.id, attributes: { title: "Abend" }).tasting_session
     expect(result.max_total).to eq(30)
     expect(result.invite_token.length).to eq(44)
